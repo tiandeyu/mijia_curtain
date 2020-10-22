@@ -166,6 +166,6 @@ class DuyaMijiaCover(CoverEntity):
                 if prop["code"] == 0 and prop["did"] == property_key:
                     value = prop["value"]
         except Exception:
-            _LOGGER.error("Get property exception", exc_info=True)
-        _LOGGER.info("{} is: {}".format(property_key, value))
+            _LOGGER.error("Get property {} exception".format(property_key), exc_info=True)
+        _LOGGER.debug("{} is: {}".format(property_key, value))
         return value
