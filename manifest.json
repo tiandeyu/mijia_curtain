@@ -1,0 +1,8 @@
+{
+  "domain": "duya_mijia_cover",
+  "name": "Duya-Mijia Cover",
+  "documentation": "https://www.natic.cn",
+  "dependencies": [],
+  "codeowners": ["@natic"],
+  "requirements": []
+}
