@@ -33,6 +33,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.util import Throttle
 import voluptuous as vol
 import logging
+from typing import Optional
 from datetime import timedelta
 from miio.miot_device import MiotDevice
 
@@ -78,6 +79,7 @@ class DuyaMijiaCover(CoverEntity):
     def __init__(self, name, host, token):
         self._name = name
         self._current_position = 0
+        self._target_position = 0
         self._action = 0
         self._mode = 0
         self.miotDevice = MiotDevice(ip=host, token=token, mapping=MIOT_MAPPING[CURTAIN_MODEL_BB82MJ])
@@ -89,7 +91,6 @@ class DuyaMijiaCover(CoverEntity):
 
     @property
     def name(self):
-        """Return the name of the device if any."""
         return self._name
 
     @property
@@ -110,37 +111,61 @@ class DuyaMijiaCover(CoverEntity):
 
     @property
     def state_attributes(self):
-        data = {'current_position': self._current_position, 'action': self._action, 'mode': self._mode}
+        data = {
+            'current_position': self._current_position,
+            'target_position': self._target_position,
+            'action': self._action,
+            'mode': self._mode
+        }
         return data
 
     def update(self):
+        self.update_current_position()
+        self.update_target_position()
+        self.update_action()
+        self.update_mode()
+        _LOGGER.error('update_state data: {}'.format(self.state_attributes))
+
+    def update_current_position(self):
         self._current_position = self.get_property('current_position')
+
+    def update_target_position(self):
+        self._target_position = self.get_property('target_position')
+
+    def update_action(self):
         self._action = self.get_property('motor_control')
+
+    def update_mode(self):
         self._mode = self.get_property('mode')
-        _LOGGER.debug('update_state')
 
     @property
     def is_opening(self):
+        self.update_action()
         return self._action == ACTION_OPEN
 
     @property
     def is_closing(self):
+        self.update_action()
         return self._action == ACTION_CLOSE
 
     @property
     def is_closed(self):
+        self.update_current_position()
         return self._current_position == 0
 
     @property
     def is_opened(self):
+        self.update_current_position()
         return self._current_position == 100
 
     @property
     def current_cover_position(self):
+        self.update_current_position()
         return self._current_position
 
     @property
     def get_mode(self):
+        self.update_mode()
         return self._mode
 
     def open_cover(self, **kwargs) -> None:
