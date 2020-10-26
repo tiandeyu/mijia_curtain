@@ -8,6 +8,7 @@ from homeassistant.components.cover import (
     SUPPORT_STOP,
     SUPPORT_SET_POSITION,
     CoverEntity,
+    DEVICE_CLASS_CURTAIN,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -28,13 +29,15 @@ from homeassistant.const import (
     STATE_OPEN,
     STATE_OPENING,
 )
-import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
+from homeassistant.util import Throttle
+import voluptuous as vol
 import logging
-_LOGGER = logging.getLogger(__name__)
-
+from datetime import timedelta
 from miio.miot_device import MiotDevice
 
+_LOGGER = logging.getLogger(__name__)
+MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
 CURTAIN_MODEL_BB82MJ = "babai.curtain.bb82mj"
 
 MIOT_MAPPING = {
@@ -84,6 +87,10 @@ class DuyaMijiaCover(CoverEntity):
         return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
 
     @property
+    def device_class(self) -> Optional[str]:
+        return DEVICE_CLASS_CURTAIN
+
+    @property
     def state(self):
         """Return the state of the cover."""
         if self.is_opening:
@@ -105,6 +112,10 @@ class DuyaMijiaCover(CoverEntity):
         if current_position is not None:
             data['current_position'] = current_position
         return data
+
+    @Throttle(MIN_TIME_BETWEEN_UPDATES)
+    def update(self):
+        _LOGGER.debug('update_state')
 
     @property
     def is_opening(self):
