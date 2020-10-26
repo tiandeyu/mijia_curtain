@@ -37,7 +37,6 @@ from datetime import timedelta
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
-MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=30)
 CURTAIN_MODEL_BB82MJ = "babai.curtain.bb82mj"
 
 MIOT_MAPPING = {
@@ -78,13 +77,20 @@ class DuyaMijiaCover(CoverEntity):
 
     def __init__(self, name, host, token):
         self._name = name
-        self.entity_id = DOMAIN + "." + str.lower(name).replace(' ', '_')
+        self._current_position = 0
+        self._action = 0
+        self._mode = 0
         self.miotDevice = MiotDevice(ip=host, token=token, mapping=MIOT_MAPPING[CURTAIN_MODEL_BB82MJ])
         _LOGGER.info("Init miot device: {}, {}".format(name, self.miotDevice))
 
     @property
     def supported_features(self):
         return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+
+    @property
+    def name(self):
+        """Return the name of the device if any."""
+        return self._name
 
     @property
     def device_class(self) -> Optional[str]:
@@ -97,55 +103,45 @@ class DuyaMijiaCover(CoverEntity):
             return STATE_OPENING
         if self.is_closing:
             return STATE_CLOSING
-
         closed = self.is_closed
-
         if closed is None:
             return None
-
         return STATE_CLOSED if closed else STATE_OPEN
 
     @property
     def state_attributes(self):
-        data = {}
-        current_position = self.current_cover_position
-        if current_position is not None:
-            data['current_position'] = current_position
+        data = {'current_position': self._current_position, 'action': self._action, 'mode': self._mode}
         return data
 
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
+        self._current_position = self.get_property('current_position')
+        self._action = self.get_property('motor_control')
+        self._mode = self.get_property('mode')
         _LOGGER.debug('update_state')
 
     @property
     def is_opening(self):
-        return self.get_property('motor_control') == ACTION_OPEN
+        return self._action == ACTION_OPEN
 
     @property
     def is_closing(self):
-        return self.get_property('motor_control') == ACTION_CLOSE
+        return self._action == ACTION_CLOSE
 
     @property
     def is_closed(self):
-        current_position = self.current_cover_position
-        if current_position is None:
-            return None
-        return current_position == 0
+        return self._current_position == 0
 
     @property
     def is_opened(self):
-        current_position = self.current_cover_position
-        if current_position is None:
-            return None
-        return current_position == 100
+        return self._current_position == 100
 
     @property
     def current_cover_position(self):
-        return self.get_property('current_position')
+        return self._current_position
 
     @property
     def get_mode(self):
-        return self.get_property('mode')
+        return self._mode
 
     def open_cover(self, **kwargs) -> None:
         self.miotDevice.set_property("motor_control", ACTION_OPEN)
