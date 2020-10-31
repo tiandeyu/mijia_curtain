@@ -16,7 +16,7 @@ https://github.com/tiandeyu/duya_mijia_cover/tree/main/custom_components
 ```shell
 //文件目录结构如下
 /config/custom_components/duya_mijia_cover/__init__.py
-/config/custom_components/duya_mijia_cover/binary_sensor.py
+/config/custom_components/duya_mijia_cover/cover.py
 /config/custom_components/duya_mijia_cover/manifest.json
 ```
 
