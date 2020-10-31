@@ -49,7 +49,6 @@ MIOT_MAPPING = {
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     DOOYA_CURTAIN_M1: {
         "motor_control": {"siid": 2, "piid": 2},
-        "status": {"siid": 2, "piid": 4},
         "current_position": {"siid": 2, "piid": 6},
         "target_position": {"siid": 2, "piid": 7},
     },
@@ -133,7 +132,7 @@ class DuyaMijiaCover(CoverEntity):
         self.update_current_position()
         self.update_target_position()
         self.update_action()
-        _LOGGER.debug('update_state data: {}'.format(self.state_attributes))
+        _LOGGER.debug('update_state {} data: {}'.format(self._name, self.state_attributes))
 
     def update_current_position(self):
         self._current_position = self.get_property('current_position')
@@ -191,5 +190,5 @@ class DuyaMijiaCover(CoverEntity):
                     value = prop["value"]
         except Exception:
             _LOGGER.error("Get property {} exception".format(property_key), exc_info=True)
-        _LOGGER.debug("{} is: {}".format(property_key, value))
+        _LOGGER.debug("{}, {} is: {}".format(self._name, property_key, value))
         return value
