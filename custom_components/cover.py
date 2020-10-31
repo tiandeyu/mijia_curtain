@@ -38,31 +38,34 @@ from datetime import timedelta
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
-CURTAIN_MODEL_BB82MJ = "babai.curtain.bb82mj"
+
+CONF_MODEL = 'model'
+DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
+BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 
 MIOT_MAPPING = {
-    CURTAIN_MODEL_BB82MJ: {
-        # http://miot-spec.org/miot-spec-v2/instances?status=all
-        # Source https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
+    # http://miot-spec.org/miot-spec-v2/instances?status=all
+    # https://miot-spec.org/miot-spec-v2/instance?type=
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
+    DOOYA_CURTAIN_M1: {
+        "motor_control": {"siid": 2, "piid": 2},
+        "status": {"siid": 2, "piid": 4},
+        "current_position": {"siid": 2, "piid": 6},
+        "target_position": {"siid": 2, "piid": 7},
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
+    BABAI_CURTAIN_BB82MJ: {
         "motor_control": {"siid": 2, "piid": 1},
         "current_position": {"siid": 2, "piid": 2},
         "target_position": {"siid": 2, "piid": 3},
-        "mode": {"siid": 2, "piid": 4},
     },
 }
-
-ACTION_PAUSE = 0
-ACTION_OPEN = 1
-ACTION_CLOSE = 2
-
-MODE_NORMAL = 0
-MODE_REVERSAL = 1
-MODE_CALIBRATE = 2
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_NAME): cv.string,
     vol.Required(CONF_HOST): cv.string,
     vol.Required(CONF_TOKEN): cv.string,
+    vol.Required(CONF_MODEL): cv.string,
 })
 
 
@@ -70,20 +73,28 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
     token = config.get(CONF_TOKEN)
-    cover = DuyaMijiaCover(name, host, token)
+    model = config.get(CONF_MODEL)
+    cover = DuyaMijiaCover(name, host, token, model)
     add_devices_callback([cover])
 
 
 class DuyaMijiaCover(CoverEntity):
-
-    def __init__(self, name, host, token):
+    def __init__(self, name, host, token, model):
+        if model == BABAI_CURTAIN_BB82MJ:
+            self._action_pause = 0
+            self._action_open = 1
+            self._action_close = 2
+        else:
+            self._action_pause = 1
+            self._action_open = 2
+            self._action_close = 0
+        self._model = model
         self._name = name
         self._current_position = 0
         self._target_position = 0
         self._action = 0
-        self._mode = 0
-        self.miotDevice = MiotDevice(ip=host, token=token, mapping=MIOT_MAPPING[CURTAIN_MODEL_BB82MJ])
-        _LOGGER.info("Init miot device: {}, {}".format(name, self.miotDevice))
+        self.miotDevice = MiotDevice(ip=host, token=token, mapping=MIOT_MAPPING[self._model])
+        _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
 
     @property
     def supported_features(self):
@@ -115,7 +126,6 @@ class DuyaMijiaCover(CoverEntity):
             'current_position': self._current_position,
             'target_position': self._target_position,
             'action': self._action,
-            'mode': self._mode
         }
         return data
 
@@ -123,8 +133,7 @@ class DuyaMijiaCover(CoverEntity):
         self.update_current_position()
         self.update_target_position()
         self.update_action()
-        self.update_mode()
-        _LOGGER.error('update_state data: {}'.format(self.state_attributes))
+        _LOGGER.debug('update_state data: {}'.format(self.state_attributes))
 
     def update_current_position(self):
         self._current_position = self.get_property('current_position')
@@ -135,18 +144,15 @@ class DuyaMijiaCover(CoverEntity):
     def update_action(self):
         self._action = self.get_property('motor_control')
 
-    def update_mode(self):
-        self._mode = self.get_property('mode')
-
     @property
     def is_opening(self):
         self.update_action()
-        return self._action == ACTION_OPEN
+        return self._action == self._action_open
 
     @property
     def is_closing(self):
         self.update_action()
-        return self._action == ACTION_CLOSE
+        return self._action == self._action_close
 
     @property
     def is_closed(self):
@@ -163,34 +169,20 @@ class DuyaMijiaCover(CoverEntity):
         self.update_current_position()
         return self._current_position
 
-    @property
-    def get_mode(self):
-        self.update_mode()
-        return self._mode
-
     def open_cover(self, **kwargs) -> None:
-        self.miotDevice.set_property("motor_control", ACTION_OPEN)
+        self.miotDevice.set_property("motor_control", self._action_open)
 
     def close_cover(self, **kwargs):
-        self.miotDevice.set_property("motor_control", ACTION_CLOSE)
+        self.miotDevice.set_property("motor_control", self._action_close)
 
     def stop_cover(self, **kwargs):
-        self.miotDevice.set_property("motor_control", ACTION_PAUSE)
+        self.miotDevice.set_property("motor_control", self._action_pause)
 
     def set_cover_position(self, **kwargs):
         self.miotDevice.set_property("target_position", kwargs['position'])
 
-    def normal(self, **kwargs):
-        self.miotDevice.set_property("mode", MODE_NORMAL)
-
-    def reversal(self, **kwargs):
-        self.miotDevice.set_property("mode", MODE_REVERSAL)
-
-    def calibrate(self, **kwargs):
-        self.miotDevice.set_property("mode", MODE_CALIBRATE)
-
     def get_property(self, property_key):
-        properties = [{"did": property_key, **MIOT_MAPPING[CURTAIN_MODEL_BB82MJ][property_key]}]
+        properties = [{"did": property_key, **MIOT_MAPPING[self._model][property_key]}]
         value = None
         try:
             results = self.miotDevice.get_properties(properties, property_getter="get_properties", max_properties=15)
