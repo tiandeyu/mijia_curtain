@@ -174,6 +174,12 @@ class DuyaMijiaCover(CoverEntity):
     def close_cover(self, **kwargs):
         self.miotDevice.set_property("motor_control", self._action_close)
 
+    def toggle(self, **kwargs) -> None:
+        if self.is_closed:
+            self.open_cover(**kwargs)
+        else:
+            self.close_cover(**kwargs)
+
     def stop_cover(self, **kwargs):
         self.miotDevice.set_property("motor_control", self._action_pause)
 
