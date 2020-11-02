@@ -137,6 +137,8 @@ class DuyaCurtain(CoverEntity):
         position = self.get_property('current_position')
         if 95 < position < 100:
             position = 100
+        if 0 < position < 5:
+            position = 0
         self._current_position = position
 
     def update_target_position(self):
