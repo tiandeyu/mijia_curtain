@@ -5,7 +5,7 @@
 >不需要改造任何额外硬件，通过WIFI，米家=HA双平台接入
 >现已经实现开合帘、设置开合位置、状态监控等功能  
   
-###支持型号 model  
+### 支持型号 model  
  获取token的时候顺便获得  
  杜亚M1: dooya.curtain.m1  
  情景开合电机WIFI X版: babai.curtain.bb82mj 
