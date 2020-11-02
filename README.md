@@ -1,7 +1,7 @@
 ## 杜亚M1 home assistant 插件
 
 
-> duya_curtain是一款ha自定义插件, 通过miot协议接入到homeassistant  
+> dooya_curtain是一款ha自定义插件, 通过miot协议接入到homeassistant  
 > 不需要额外改造任何硬件，通过WIFI，米家-HA双平台接入  
 > 现已经实现开合帘、设置开合位置、状态监控等功能  
   
@@ -12,13 +12,13 @@
 
 ### 下载custom component
 下载下面网址所有文件到如下目录/config/custom_components/
-https://github.com/tiandeyu/duya_curtain/tree/main/custom_components
+https://github.com/tiandeyu/dooya_curtain/tree/main/custom_components
 
 ```shell
 //文件目录结构如下
-/config/custom_components/duya_curtain/__init__.py
-/config/custom_components/duya_curtain/cover.py
-/config/custom_components/duya_curtain/manifest.json
+/config/custom_components/dooya_curtain/__init__.py
+/config/custom_components/dooya_curtain/cover.py
+/config/custom_components/dooya_curtain/manifest.json
 ```
 
 ### configuration.yaml配置 
@@ -33,7 +33,7 @@ https://github.com/tiandeyu/duya_curtain/tree/main/custom_components
  
 ```yaml
 cover:
-  - platform: duya_curtain
+  - platform: dooya_curtain
     name: 'Bedroom Cover'
     host: 192.168.2.79
     token: d863582422bc743e4ac30d91fe037373

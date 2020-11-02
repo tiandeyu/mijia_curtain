@@ -1,4 +1,4 @@
-"""Support for Duya Curtain."""
+"""Support for Dooya Curtain."""
 from homeassistant.components.cover import (
     DOMAIN,
     ENTITY_ID_FORMAT,
@@ -73,11 +73,11 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     host = config.get(CONF_HOST)
     token = config.get(CONF_TOKEN)
     model = config.get(CONF_MODEL)
-    cover = DuyaCurtain(name, host, token, model)
+    cover = DooyaCurtain(name, host, token, model)
     add_devices_callback([cover])
 
 
-class DuyaCurtain(CoverEntity):
+class DooyaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
         if model == BABAI_CURTAIN_BB82MJ:
             self._action_pause = 0
