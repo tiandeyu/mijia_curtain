@@ -1,6 +1,6 @@
 {
-  "domain": "duya_mijia_cover",
-  "name": "Duya-Mijia Cover",
+  "domain": "duya_curtain",
+  "name": "Duya Curtain",
   "documentation": "https://www.natic.cn",
   "dependencies": [],
   "codeowners": ["@natic"],
