@@ -135,7 +135,10 @@ class DuyaMijiaCover(CoverEntity):
         _LOGGER.debug('update_state {} data: {}'.format(self._name, self.state_attributes))
 
     def update_current_position(self):
-        self._current_position = self.get_property('current_position')
+        position = self.get_property('current_position')
+        if 95 < position < 100:
+            position = 100
+        self._current_position = position
 
     def update_target_position(self):
         self._target_position = self.get_property('target_position')
