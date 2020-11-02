@@ -1,9 +1,9 @@
 ## 杜亚M1 home assistant 插件
 
 
->duya_mijia_cover是一款ha自定义插件, 通过miot协议接入到homeassistant
->不需要改造任何额外硬件，通过WIFI，米家=HA双平台接入
->现已经实现开合帘、设置开合位置、状态监控等功能  
+> duya_mijia_cover是一款ha自定义插件, 通过miot协议接入到homeassistant  
+> 不需要改造任何额外硬件，通过WIFI，米家-HA双平台接入  
+> 现已经实现开合帘、设置开合位置、状态监控等功能  
   
 ### 支持型号 model  
  获取token的时候顺便获得  
