@@ -42,6 +42,7 @@ _LOGGER = logging.getLogger(__name__)
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
+LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 
 MIOT_MAPPING = {
     # http://miot-spec.org/miot-spec-v2/instances?status=all
@@ -57,6 +58,12 @@ MIOT_MAPPING = {
         "motor_control": {"siid": 2, "piid": 1},
         "current_position": {"siid": 2, "piid": 2},
         "target_position": {"siid": 2, "piid": 3},
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hagl05:1
+    LUMI_CURTAIN_HAGL05: {
+        "motor_control": {"siid": 2, "piid": 2},
+        "current_position": {"siid": 2, "piid": 3},
+        "target_position": {"siid": 2, "piid": 7},
     },
 }
 
@@ -79,7 +86,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
 class DooyaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
-        if model == BABAI_CURTAIN_BB82MJ:
+        if model == BABAI_CURTAIN_BB82MJ or model == LUMI_CURTAIN_HAGL05:
             self._action_pause = 0
             self._action_open = 1
             self._action_close = 2
