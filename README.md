@@ -7,9 +7,13 @@
   
 ### 支持型号 model  
  获取token的时候顺便获得  
- 杜亚M1:             dooya.curtain.m1  
- 情景开合电机WIFI X版: babai.curtain.bb82mj  
- 绿米窗帘电机WIFI版:   lumi.curtain.hagl05  
+ 
+ | 名称 | 型号 | 
+| :---- | :--- | 
+| 杜亚M1 | dooya.curtain.m1 | 
+| 情景开合电机WIFI X版（闲鱼米家电机） | babai.curtain.bb82mj | 
+| 绿米窗帘电机WIFI版 | lumi.curtain.hagl05 | 
+
 
 ### 下载custom component
 下载下面网址所有文件到如下目录/config/custom_components/
