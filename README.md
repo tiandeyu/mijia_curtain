@@ -8,7 +8,7 @@
 ### 支持型号 model  
  获取token的时候顺便获得  
  
- | 名称 | 型号 | 
+| 名称 | 型号 | 
 | :---- | :--- | 
 | 杜亚M1 | dooya.curtain.m1 | 
 | 情景开合电机WIFI X版（闲鱼米家电机） | babai.curtain.bb82mj | 
