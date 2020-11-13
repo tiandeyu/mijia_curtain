@@ -43,6 +43,7 @@ CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
+SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
 
 MIOT_MAPPING = {
     # http://miot-spec.org/miot-spec-v2/instances?status=all
@@ -64,6 +65,12 @@ MIOT_MAPPING = {
         "motor_control": {"siid": 2, "piid": 2},
         "current_position": {"siid": 2, "piid": 3},
         "target_position": {"siid": 2, "piid": 7},
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
+    SYNIOT_CURTAIN_SYC1: {
+        "motor_control": {"siid": 2, "piid": 1},
+        "current_position": {"siid": 2, "piid": 2},
+        "target_position": {"siid": 2, "piid": 2},
     },
 }
 
@@ -90,6 +97,10 @@ class DooyaCurtain(CoverEntity):
             self._action_pause = 0
             self._action_open = 1
             self._action_close = 2
+        if model == SYNIOT_CURTAIN_SYC1:
+            self._action_open = 0
+            self._action_close = 1
+            self._action_pause = 2
         else:
             self._action_pause = 1
             self._action_open = 2
