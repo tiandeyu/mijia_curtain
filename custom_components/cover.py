@@ -41,6 +41,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
+DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
@@ -50,6 +51,11 @@ MIOT_MAPPING = {
     # https://miot-spec.org/miot-spec-v2/instance?type=
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     DOOYA_CURTAIN_M1: {
+        "motor_control": {"siid": 2, "piid": 2},
+        "current_position": {"siid": 2, "piid": 6},
+        "target_position": {"siid": 2, "piid": 7},
+    },
+    DOOYA_CURTAIN_M2: {
         "motor_control": {"siid": 2, "piid": 2},
         "current_position": {"siid": 2, "piid": 6},
         "target_position": {"siid": 2, "piid": 7},
