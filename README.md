@@ -11,6 +11,7 @@
 | 名称 | 型号 | 
 | :---- | :--- | 
 | 杜亚M1 | dooya.curtain.m1 | 
+| 杜亚M2 | dooya.curtain.m2 | 
 | 情景开合电机WIFI X版（闲鱼米家电机） | babai.curtain.bb82mj | 
 | 绿米窗帘电机WIFI版 | lumi.curtain.hagl05 | 
 
