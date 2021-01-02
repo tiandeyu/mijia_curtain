@@ -159,6 +159,8 @@ class DooyaCurtain(CoverEntity):
 
     def update_current_position(self):
         position = self.get_property('current_position')
+        if position is None:
+            return
         if position:
             if 95 < position < 100:
                 position = 100
