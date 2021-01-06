@@ -45,5 +45,10 @@ cover:
     token: d863582422bc743e4ac30d91fe037373
     model: dooya.curtain.m1
     scan_interval: 10
+```
 
+### 米家token获取
+```url
+https://github.com/tiandeyu/Xiaomi-cloud-tokens-extractor
+```
 
