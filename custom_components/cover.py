@@ -45,7 +45,9 @@ ATTR_CURRENT_POSITION = 'current-position'
 ATTR_TARGET_POSITION = 'target-position'
 ATTR_PAUSE = 'Pause'
 ATTR_OPEN = 'Open'
+ATTR_UP = 'Up'
 ATTR_CLOSE = 'Close'
+ATTR_DOWN = 'Down'
 
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
@@ -162,8 +164,8 @@ def get_mapping(model, mapping):
     mapping[ATTR_MOTOR_CONTROL]['piid'] = motor_control_prop['iid']
     value_list = motor_control_prop['value-list']
     mapping[ATTR_PAUSE] = [value for value in value_list if value['description'] == ATTR_PAUSE][0]['value']
-    mapping[ATTR_OPEN] = [value for value in value_list if value['description'] == ATTR_OPEN][0]['value']
-    mapping[ATTR_CLOSE] = [value for value in value_list if value['description'] == ATTR_CLOSE][0]['value']
+    mapping[ATTR_OPEN] = [value for value in value_list if value['description'] in [ATTR_OPEN, ATTR_UP]][0]['value']
+    mapping[ATTR_CLOSE] = [value for value in value_list if value['description'] in [ATTR_CLOSE, ATTR_DOWN]][0]['value']
 
     current_position_prop = [prop for prop in curtain_properties if 'property:current-position' in prop['type']][0]
     mapping[ATTR_CURRENT_POSITION]['siid'] = siid
