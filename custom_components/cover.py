@@ -154,7 +154,7 @@ def get_mapping(model, mapping):
     # get service by model
     services = send_http_req(services_url)['services']
     # find curtain properties
-    curtain_services = [service for service in services if ATTR_CURTAIN or ATTR_AIRER in service['type']]
+    curtain_services = [service for service in services if ATTR_CURTAIN in service['type'] or ATTR_AIRER in service['type']]
     if len(curtain_services) == 0:
         raise RuntimeError('Current device is not a curtain: {}'.format(model))
     curtain_service = curtain_services[0]
