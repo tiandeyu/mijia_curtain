@@ -1,6 +1,6 @@
 {
-  "domain": "dooya_curtain",
-  "name": "Dooya Curtain",
+  "domain": "mijia_curtain",
+  "name": "Mijia Curtain",
   "documentation": "https://www.natic.cn",
   "dependencies": [],
   "codeowners": ["@natic"],
