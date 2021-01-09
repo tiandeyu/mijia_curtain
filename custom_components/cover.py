@@ -128,7 +128,7 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     host = config.get(CONF_HOST)
     token = config.get(CONF_TOKEN)
     model = config.get(CONF_MODEL)
-    cover = DooyaCurtain(name, host, token, model)
+    cover = MijiaCurtain(name, host, token, model)
     add_devices_callback([cover])
 
 
@@ -178,7 +178,7 @@ def get_mapping(model, mapping):
     return mapping
 
 
-class DooyaCurtain(CoverEntity):
+class MijiaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
         self._name = name
         self._current_position = 0
