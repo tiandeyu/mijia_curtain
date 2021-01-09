@@ -159,7 +159,7 @@ def get_mapping(model, mapping):
     siid = curtain_service['iid']
     curtain_properties = curtain_service['properties']
 
-    motor_control_prop = [prop for prop in curtain_properties if 'property:motor-control' in prop['type']][0]
+    motor_control_prop = [prop for prop in curtain_properties if ATTR_MOTOR_CONTROL in prop['type']][0]
     mapping[ATTR_MOTOR_CONTROL]['siid'] = siid
     mapping[ATTR_MOTOR_CONTROL]['piid'] = motor_control_prop['iid']
     value_list = motor_control_prop['value-list']
@@ -167,11 +167,11 @@ def get_mapping(model, mapping):
     mapping[ATTR_OPEN] = [value for value in value_list if value['description'] in [ATTR_OPEN, ATTR_UP]][0]['value']
     mapping[ATTR_CLOSE] = [value for value in value_list if value['description'] in [ATTR_CLOSE, ATTR_DOWN]][0]['value']
 
-    current_position_prop = [prop for prop in curtain_properties if 'property:current-position' in prop['type']][0]
+    current_position_prop = [prop for prop in curtain_properties if ATTR_CURRENT_POSITION in prop['type']][0]
     mapping[ATTR_CURRENT_POSITION]['siid'] = siid
     mapping[ATTR_CURRENT_POSITION]['piid'] = current_position_prop['iid']
 
-    target_position_prop = [prop for prop in curtain_properties if 'property:target-position' in prop['type']][0]
+    target_position_prop = [prop for prop in curtain_properties if ATTR_TARGET_POSITION in prop['type']][0]
     mapping[ATTR_TARGET_POSITION]['siid'] = siid
     mapping[ATTR_TARGET_POSITION]['piid'] = target_position_prop['iid']
 
