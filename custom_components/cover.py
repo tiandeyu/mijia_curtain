@@ -1,4 +1,4 @@
-"""Support for Dooya Curtain."""
+"""Support for Mijia Curtain."""
 from homeassistant.components.cover import (
     DOMAIN,
     ENTITY_ID_FORMAT,
@@ -30,14 +30,22 @@ from homeassistant.const import (
     STATE_OPENING,
 )
 import homeassistant.helpers.config_validation as cv
-from homeassistant.util import Throttle
 import voluptuous as vol
 import logging
+import requests
+import json
 from typing import Optional
-from datetime import timedelta
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
+
+
+ATTR_MOTOR_CONTROL = 'motor-control'
+ATTR_CURRENT_POSITION = 'current-position'
+ATTR_TARGET_POSITION = 'target-position'
+ATTR_PAUSE = 'Pause'
+ATTR_OPEN = 'Open'
+ATTR_CLOSE = 'Close'
 
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
@@ -47,60 +55,61 @@ LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_AIRER_ACN01 = "lumi.airer.acn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
 
+
 MIOT_MAPPING = {
     # http://miot-spec.org/miot-spec-v2/instances?status=all
     # https://miot-spec.org/miot-spec-v2/instance?type=
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     DOOYA_CURTAIN_M1: {
-        "motor_control": {"siid": 2, "piid": 2},
-        "current_position": {"siid": 2, "piid": 6},
-        "target_position": {"siid": 2, "piid": 7},
-        "action_pause": 1,
-        "action_open": 2,
-        "action_close": 0,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 1,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 0,
     },
     DOOYA_CURTAIN_M2: {
-        "motor_control": {"siid": 2, "piid": 2},
-        "current_position": {"siid": 2, "piid": 6},
-        "target_position": {"siid": 2, "piid": 7},
-        "action_pause": 1,
-        "action_open": 2,
-        "action_close": 0,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 1,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 0,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     BABAI_CURTAIN_BB82MJ: {
-        "motor_control": {"siid": 2, "piid": 1},
-        "current_position": {"siid": 2, "piid": 2},
-        "target_position": {"siid": 2, "piid": 3},
-        "action_pause": 0,
-        "action_open": 1,
-        "action_close": 2,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 3},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 1,
+        ATTR_CLOSE: 2,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hagl05:1
     LUMI_CURTAIN_HAGL05: {
-        "motor_control": {"siid": 2, "piid": 2},
-        "current_position": {"siid": 2, "piid": 3},
-        "target_position": {"siid": 2, "piid": 7},
-        "action_pause": 0,
-        "action_open": 1,
-        "action_close": 2,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 3},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 1,
+        ATTR_CLOSE: 2,
     },
     LUMI_AIRER_ACN01: {
-        "motor_control": {"siid": 2, "piid": 1},
-        "current_position": {"siid": 2, "piid": 2},
-        "target_position": {"siid": 2, "piid": 2},
-        "action_pause": 2,
-        "action_open": 0,
-        "action_close": 1,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
+        ATTR_PAUSE: 2,
+        ATTR_OPEN: 0,
+        ATTR_CLOSE: 1,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
     SYNIOT_CURTAIN_SYC1: {
-        "motor_control": {"siid": 2, "piid": 1},
-        "current_position": {"siid": 2, "piid": 2},
-        "target_position": {"siid": 2, "piid": 2},
-        "action_pause": 2,
-        "action_open": 0,
-        "action_close": 1,
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
+        ATTR_PAUSE: 2,
+        ATTR_OPEN: 0,
+        ATTR_CLOSE: 1,
     },
 }
 
@@ -108,7 +117,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_NAME): cv.string,
     vol.Required(CONF_HOST): cv.string,
     vol.Required(CONF_TOKEN): cv.string,
-    vol.Required(CONF_MODEL): cv.string,
+    vol.Optional(CONF_MODEL): cv.string,
 })
 
 
@@ -121,18 +130,77 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     add_devices_callback([cover])
 
 
+def send_http_req(url):
+    r = requests.get(url)
+    status_code = r.status_code
+    if status_code != 200:
+        raise RuntimeError('Failing requesting {}'.format(url))
+    return json.loads(r.content)
+
+
+def get_mapping(model, mapping):
+    # populate curtain mapping from miot spec rest service
+    instance_url = "http://miot-spec.org/miot-spec-v2/instances?status=all"
+    instances = send_http_req(instance_url)['instances']
+    # get instance by model
+    model_instances = [instance for instance in instances if instance['model'] == model]
+    if len(model_instances) == 0:
+        raise RuntimeError('Failing find model: {} from internet'.format(model))
+    services_url = "https://miot-spec.org/miot-spec-v2/instance?type={}".format(model_instances[0]['type'])
+    # get service by model
+    services = send_http_req(services_url)['services']
+    # find curtain properties
+    curtain_services = [service for service in services if 'service:curtain' in service['type']]
+    if len(curtain_services) == 0:
+        raise RuntimeError('Current device is not a curtain: {}'.format(model))
+    curtain_service = curtain_services[0]
+    siid = curtain_service['iid']
+    curtain_properties = curtain_service['properties']
+
+    motor_control_prop = [prop for prop in curtain_properties if 'property:motor-control' in prop['type']][0]
+    mapping[ATTR_MOTOR_CONTROL]['siid'] = siid
+    mapping[ATTR_MOTOR_CONTROL]['piid'] = motor_control_prop['iid']
+    value_list = motor_control_prop['value-list']
+    mapping[ATTR_PAUSE] = [value for value in value_list if value['description'] == ATTR_PAUSE][0]['value']
+    mapping[ATTR_OPEN] = [value for value in value_list if value['description'] == ATTR_OPEN][0]['value']
+    mapping[ATTR_CLOSE] = [value for value in value_list if value['description'] == ATTR_CLOSE][0]['value']
+
+    current_position_prop = [prop for prop in curtain_properties if 'property:current-position' in prop['type']][0]
+    mapping[ATTR_CURRENT_POSITION]['siid'] = siid
+    mapping[ATTR_CURRENT_POSITION]['piid'] = current_position_prop['iid']
+
+    target_position_prop = [prop for prop in curtain_properties if 'property:target-position' in prop['type']][0]
+    mapping[ATTR_TARGET_POSITION]['siid'] = siid
+    mapping[ATTR_TARGET_POSITION]['piid'] = target_position_prop['iid']
+
+    return mapping
+
+
 class DooyaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
-        self._action_pause = MIOT_MAPPING[model]['action_pause']
-        self._action_open = MIOT_MAPPING[model]['action_open']
-        self._action_close = MIOT_MAPPING[model]['action_close']
-        self._model = model
         self._name = name
         self._current_position = 0
         self._target_position = 0
         self._action = 0
-        self.miotDevice = MiotDevice(ip=host, token=token, mapping=MIOT_MAPPING[self._model])
+        if model:
+            self._model = model
+            self._mapping = MIOT_MAPPING[model]
+        else:
+            self._mapping = {
+                ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
+                ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
+                ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
+                ATTR_PAUSE: 0,
+                ATTR_OPEN: 0,
+                ATTR_CLOSE: 0,
+            }
+        # init device
+        self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
+        # if model not config get model from miot device info
+        if not model:
+            self._model = self.miotDevice.info().model
+            self._mapping = get_mapping(self._model, self._mapping)
 
     @property
     def supported_features(self):
@@ -160,9 +228,9 @@ class DooyaCurtain(CoverEntity):
     @property
     def state_attributes(self):
         data = {
-            'current_position': self._current_position,
-            'target_position': self._target_position,
-            'action': self._action,
+            ATTR_CURRENT_POSITION: self._current_position,
+            ATTR_TARGET_POSITION: self._target_position,
+            CONF_MODEL: self._model
         }
         return data
 
@@ -173,7 +241,7 @@ class DooyaCurtain(CoverEntity):
         _LOGGER.debug('update_state {} data: {}'.format(self._name, self.state_attributes))
 
     def update_current_position(self):
-        position = self.get_property('current_position')
+        position = self.get_property(ATTR_CURRENT_POSITION)
         if position is None:
             return
         if position:
@@ -184,20 +252,20 @@ class DooyaCurtain(CoverEntity):
             self._current_position = position
 
     def update_target_position(self):
-        self._target_position = self.get_property('target_position')
+        self._target_position = self.get_property(ATTR_TARGET_POSITION)
 
     def update_action(self):
-        self._action = self.get_property('motor_control')
+        self._action = self.get_property(ATTR_MOTOR_CONTROL)
 
     @property
     def is_opening(self):
         self.update_action()
-        return self._action == self._action_open
+        return self._action == self._mapping[ATTR_OPEN]
 
     @property
     def is_closing(self):
         self.update_action()
-        return self._action == self._action_close
+        return self._action == self._mapping[ATTR_CLOSE]
 
     @property
     def is_closed(self):
@@ -215,10 +283,10 @@ class DooyaCurtain(CoverEntity):
         return self._current_position
 
     def open_cover(self, **kwargs) -> None:
-        self.miotDevice.set_property("motor_control", self._action_open)
+        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
 
     def close_cover(self, **kwargs):
-        self.miotDevice.set_property("motor_control", self._action_close)
+        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
 
     def toggle(self, **kwargs) -> None:
         if self.is_closed:
@@ -227,13 +295,13 @@ class DooyaCurtain(CoverEntity):
             self.close_cover(**kwargs)
 
     def stop_cover(self, **kwargs):
-        self.miotDevice.set_property("motor_control", self._action_pause)
+        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
 
     def set_cover_position(self, **kwargs):
-        self.miotDevice.set_property("target_position", kwargs['position'])
+        self.miotDevice.set_property(ATTR_TARGET_POSITION, kwargs['position'])
 
     def get_property(self, property_key):
-        properties = [{"did": property_key, **MIOT_MAPPING[self._model][property_key]}]
+        properties = [{"did": property_key, **self._mapping[property_key]}]
         value = None
         try:
             results = self.miotDevice.get_properties(properties, property_getter="get_properties", max_properties=15)
