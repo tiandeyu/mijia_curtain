@@ -44,6 +44,7 @@ DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
+LUMI_AIRER_ACN01 = "lumi.airer.acn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
 
 MIOT_MAPPING = {
@@ -54,29 +55,52 @@ MIOT_MAPPING = {
         "motor_control": {"siid": 2, "piid": 2},
         "current_position": {"siid": 2, "piid": 6},
         "target_position": {"siid": 2, "piid": 7},
+        "action_pause": 1,
+        "action_open": 2,
+        "action_close": 0,
     },
     DOOYA_CURTAIN_M2: {
         "motor_control": {"siid": 2, "piid": 2},
         "current_position": {"siid": 2, "piid": 6},
         "target_position": {"siid": 2, "piid": 7},
+        "action_pause": 1,
+        "action_open": 2,
+        "action_close": 0,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     BABAI_CURTAIN_BB82MJ: {
         "motor_control": {"siid": 2, "piid": 1},
         "current_position": {"siid": 2, "piid": 2},
         "target_position": {"siid": 2, "piid": 3},
+        "action_pause": 0,
+        "action_open": 1,
+        "action_close": 2,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hagl05:1
     LUMI_CURTAIN_HAGL05: {
         "motor_control": {"siid": 2, "piid": 2},
         "current_position": {"siid": 2, "piid": 3},
         "target_position": {"siid": 2, "piid": 7},
+        "action_pause": 0,
+        "action_open": 1,
+        "action_close": 2,
+    },
+    LUMI_AIRER_ACN01: {
+        "motor_control": {"siid": 2, "piid": 1},
+        "current_position": {"siid": 2, "piid": 2},
+        "target_position": {"siid": 2, "piid": 2},
+        "action_pause": 2,
+        "action_open": 0,
+        "action_close": 1,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
     SYNIOT_CURTAIN_SYC1: {
         "motor_control": {"siid": 2, "piid": 1},
         "current_position": {"siid": 2, "piid": 2},
         "target_position": {"siid": 2, "piid": 2},
+        "action_pause": 2,
+        "action_open": 0,
+        "action_close": 1,
     },
 }
 
@@ -99,18 +123,9 @@ def setup_platform(hass, config, add_devices_callback, discovery_info=None):
 
 class DooyaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
-        if model == BABAI_CURTAIN_BB82MJ or model == LUMI_CURTAIN_HAGL05:
-            self._action_pause = 0
-            self._action_open = 1
-            self._action_close = 2
-        if model == SYNIOT_CURTAIN_SYC1:
-            self._action_open = 0
-            self._action_close = 1
-            self._action_pause = 2
-        else:
-            self._action_pause = 1
-            self._action_open = 2
-            self._action_close = 0
+        self._action_pause = MIOT_MAPPING[model]['action_pause']
+        self._action_open = MIOT_MAPPING[model]['action_open']
+        self._action_close = MIOT_MAPPING[model]['action_close']
         self._model = model
         self._name = name
         self._current_position = 0
