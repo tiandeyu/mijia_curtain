@@ -40,7 +40,8 @@ from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
 
-
+ATTR_CURTAIN = 'curtain'
+ATTR_AIRER = 'airer'
 ATTR_MOTOR_CONTROL = 'motor-control'
 ATTR_CURRENT_POSITION = 'current-position'
 ATTR_TARGET_POSITION = 'target-position'
@@ -153,7 +154,7 @@ def get_mapping(model, mapping):
     # get service by model
     services = send_http_req(services_url)['services']
     # find curtain properties
-    curtain_services = [service for service in services if 'service:curtain' in service['type']]
+    curtain_services = [service for service in services if ATTR_CURTAIN or ATTR_AIRER in service['type']]
     if len(curtain_services) == 0:
         raise RuntimeError('Current device is not a curtain: {}'.format(model))
     curtain_service = curtain_services[0]
@@ -215,7 +216,10 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def device_class(self) -> Optional[str]:
-        return DEVICE_CLASS_GATE
+        if ATTR_CURTAIN in self._model:
+            return DEVICE_CLASS_GATE
+        if ATTR_AIRER in self._model:
+            return DEVICE_CLASS_CURTAIN
 
     @property
     def state(self):
