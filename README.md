@@ -1,10 +1,10 @@
 ## 米家平台窗帘 home assistant 插件
 
 
-> mijia_curtain是一款ha自定义插件, 通过miot协议接入到homeassistant  
-> 理论上支持米家平台所有窗帘设备(发现不支持的可以提交issue)
-> 不需要额外改造任何硬件，通过WIFI，米家-HA双平台接入  
-> 现已经实现开合帘、设置开合位置、状态监控等功能  
+> mijia_curtain是一款ha自定义插件, 通过miot协议接入到homeassistant    
+> 理论上支持米家平台所有窗帘设备(发现不支持的可以提交issue)   
+> 不需要额外改造任何硬件，通过WIFI，米家-HA双平台接入    
+> 现已经实现开合帘、设置开合位置、状态监控等功能    
   
 ### 支持型号，米家平台所有开启MIoT协议的窗帘
 
@@ -47,8 +47,9 @@ https://github.com/tiandeyu/Xiaomi-cloud-tokens-extractor
 
 ### 已验证型号 model   
 
-> 如果ha环境没有外网可以手工填写model配置，仅支持以下几个型号
- 
+> 如果ha环境没有外网可以手工填写model配置，仅支持以下几个型号   
+> 未验证型号直接填写token，会自动从网络拉取model配置
+
 | 名称 | 型号 | 
 | :---- | :--- | 
 | 杜亚M1 | dooya.curtain.m1 | 
