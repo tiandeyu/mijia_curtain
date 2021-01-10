@@ -1,11 +1,11 @@
-## 米家平台窗帘/晾衣架 home assistant 插件
+## 米家平台窗帘 home assistant 插件
 
 
 > mijia_curtain是一款ha自定义插件, 通过miot协议接入到homeassistant
 > 
-> 支持开合帘、设置开合位置、状态监控等功能(晾衣架暂不支持灯和烘干灯功能)    
+> 支持开合帘、设置开合位置、状态监控等功能  
   
-### 支持型号，米家平台所有开启MIoT协议的窗帘/晾衣架
+### 支持型号，米家平台所有开启MIoT协议的窗帘
 
 ### 下载custom component
 下载下面网址所有文件到如下目录/config/custom_components/
