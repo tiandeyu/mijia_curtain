@@ -56,8 +56,9 @@ DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
-LUMI_AIRER_ACN01 = "lumi.airer.acn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
+
+LUMI_AIRER_ACN01 = "lumi.airer.acn01"
 
 
 MIOT_MAPPING = {
@@ -98,7 +99,8 @@ MIOT_MAPPING = {
         ATTR_OPEN: 1,
         ATTR_CLOSE: 2,
     },
-    LUMI_AIRER_ACN01: {
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
+    SYNIOT_CURTAIN_SYC1: {
         ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
         ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
         ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
@@ -106,8 +108,8 @@ MIOT_MAPPING = {
         ATTR_OPEN: 0,
         ATTR_CLOSE: 1,
     },
-    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
-    SYNIOT_CURTAIN_SYC1: {
+
+    LUMI_AIRER_ACN01: {
         ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
         ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
         ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
@@ -144,7 +146,7 @@ def send_http_req(url):
 
 def get_mapping(model, mapping):
     # populate curtain mapping from miot spec rest service
-    instance_url = "http://miot-spec.org/miot-spec-v2/instances?status=all"
+    instance_url = "https://miot-spec.org/miot-spec-v2/instances?status=all"
     instances = send_http_req(instance_url)['instances']
     # get instance by model
     model_instances = [instance for instance in instances if instance['model'] == model]
