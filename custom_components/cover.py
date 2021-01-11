@@ -48,7 +48,6 @@ ATTR_MOTOR_CONTROL = 'motor-control'
 ATTR_STATUS = 'status'
 ATTR_CURRENT_POSITION = 'current-position'
 ATTR_TARGET_POSITION = 'target-position'
-ATTR_POLARITY = 'polarity'
 
 ATTR_PAUSE = 'Pause'
 ATTR_OPEN = 'Open'
@@ -67,7 +66,6 @@ BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
-
 
 
 MIOT_MAPPING = {
@@ -161,7 +159,18 @@ def send_http_req(url):
     return json.loads(r.content)
 
 
+def get_service(model, services):
+    # get curtain of airer from model
+    device_type = model.split('.')[1]
+    name = 'service:{}:'.format(device_type)
+    curtain_services = [service for service in services if name in service['type']]
+    if len(curtain_services) == 0:
+        raise RuntimeError('Current device is not a curtain: {}'.format(model))
+    return curtain_services[0]
+
+
 def get_property(properties, name):
+    name = 'property:{}:'.format(name)
     return [prop for prop in properties if name in prop['type']][0]
 
 
@@ -181,10 +190,8 @@ def get_mapping(model, mapping):
     # get service by model
     services = send_http_req(services_url)['services']
     # find curtain properties
-    curtain_services = [service for service in services if ATTR_CURTAIN in service['type'] or ATTR_AIRER in service['type']]
-    if len(curtain_services) == 0:
-        raise RuntimeError('Current device is not a curtain: {}'.format(model))
-    curtain_service = curtain_services[0]
+
+    curtain_service = get_service(model, services)
     siid = curtain_service['iid']
     curtain_properties = curtain_service['properties']
 
@@ -223,7 +230,6 @@ class MijiaCurtain(CoverEntity):
         self._current_position = 0
         self._target_position = 0
         self._action = 0
-        self._polarity = None
         if model:
             self._model = model
             self._mapping = MIOT_MAPPING[model]
@@ -276,7 +282,6 @@ class MijiaCurtain(CoverEntity):
             ATTR_CURRENT_POSITION: self._current_position,
             ATTR_TARGET_POSITION: self._target_position,
             CONF_MODEL: self._model,
-            ATTR_POLARITY: self._polarity,
         }
         return data
 
@@ -284,8 +289,6 @@ class MijiaCurtain(CoverEntity):
         self.update_current_position()
         self.update_target_position()
         self.update_action()
-        if ATTR_LUMI in self._model:
-            self._polarity = self.get_property(ATTR_POLARITY)
         _LOGGER.debug('update_state {} data: {}'.format(self._name, self.state_attributes))
 
     def update_current_position(self):
@@ -310,7 +313,7 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_opening(self):
-        self.update_action()
+        # self.update_action()
         if ATTR_LUMI in self._model:
             return self._action == self._mapping[ATTR_OPENING]
         else:
@@ -318,7 +321,7 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_closing(self):
-        self.update_action()
+        # self.update_action()
         if ATTR_LUMI in self._model:
             return self._action == self._mapping[ATTR_CLOSING]
         else:
@@ -326,17 +329,17 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_closed(self):
-        self.update_current_position()
+        # self.update_current_position()
         return self._current_position == 0
 
     @property
     def is_opened(self):
-        self.update_current_position()
+        # self.update_current_position()
         return self._current_position == 100
 
     @property
     def current_cover_position(self):
-        self.update_current_position()
+        # self.update_current_position()
         return self._current_position
 
     def open_cover(self, **kwargs) -> None:
