@@ -42,23 +42,32 @@ _LOGGER = logging.getLogger(__name__)
 
 ATTR_CURTAIN = 'curtain'
 ATTR_AIRER = 'airer'
+ATTR_LUMI = 'lumi'
+
 ATTR_MOTOR_CONTROL = 'motor-control'
+ATTR_STATUS = 'status'
 ATTR_CURRENT_POSITION = 'current-position'
 ATTR_TARGET_POSITION = 'target-position'
+ATTR_POLARITY = 'polarity'
+
 ATTR_PAUSE = 'Pause'
 ATTR_OPEN = 'Open'
 ATTR_UP = 'Up'
 ATTR_CLOSE = 'Close'
 ATTR_DOWN = 'Down'
 
+ATTR_STOPPED = 'Stopped'
+ATTR_OPENING = 'Opening'
+ATTR_CLOSING = 'Closing'
+
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
+LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
 
-LUMI_AIRER_ACN01 = "lumi.airer.acn01"
 
 
 MIOT_MAPPING = {
@@ -93,23 +102,31 @@ MIOT_MAPPING = {
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hagl05:1
     LUMI_CURTAIN_HAGL05: {
         ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_STATUS: {"siid": 2, "piid": 6},
         ATTR_CURRENT_POSITION: {"siid": 2, "piid": 3},
         ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
         ATTR_PAUSE: 0,
         ATTR_OPEN: 1,
         ATTR_CLOSE: 2,
+        ATTR_STOPPED: 0,
+        ATTR_OPENING: 1,
+        ATTR_CLOSING: 2,
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hmcn01:1
+    LUMI_CURTAIN_HMCN01: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_STATUS: {"siid": 2, "piid": 6},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 3},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 1,
+        ATTR_CLOSE: 2,
+        ATTR_STOPPED: 0,
+        ATTR_OPENING: 1,
+        ATTR_CLOSING: 2,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:syniot-syc1:1
     SYNIOT_CURTAIN_SYC1: {
-        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
-        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
-        ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
-        ATTR_PAUSE: 2,
-        ATTR_OPEN: 0,
-        ATTR_CLOSE: 1,
-    },
-
-    LUMI_AIRER_ACN01: {
         ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
         ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
         ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
@@ -144,6 +161,14 @@ def send_http_req(url):
     return json.loads(r.content)
 
 
+def get_property(properties, name):
+    return [prop for prop in properties if name in prop['type']][0]
+
+
+def get_value(value_list, name_list):
+    return [value for value in value_list if value['description'] in name_list][0]['value']
+
+
 def get_mapping(model, mapping):
     # populate curtain mapping from miot spec rest service
     instance_url = "https://miot-spec.org/miot-spec-v2/instances?status=all"
@@ -163,13 +188,23 @@ def get_mapping(model, mapping):
     siid = curtain_service['iid']
     curtain_properties = curtain_service['properties']
 
-    motor_control_prop = [prop for prop in curtain_properties if ATTR_MOTOR_CONTROL in prop['type']][0]
+    motor_control_prop = get_property(curtain_properties, ATTR_MOTOR_CONTROL)
     mapping[ATTR_MOTOR_CONTROL]['siid'] = siid
     mapping[ATTR_MOTOR_CONTROL]['piid'] = motor_control_prop['iid']
     value_list = motor_control_prop['value-list']
-    mapping[ATTR_PAUSE] = [value for value in value_list if value['description'] == ATTR_PAUSE][0]['value']
-    mapping[ATTR_OPEN] = [value for value in value_list if value['description'] in [ATTR_OPEN, ATTR_UP]][0]['value']
-    mapping[ATTR_CLOSE] = [value for value in value_list if value['description'] in [ATTR_CLOSE, ATTR_DOWN]][0]['value']
+    mapping[ATTR_PAUSE] = get_value(value_list, [ATTR_PAUSE])
+    mapping[ATTR_OPEN] = get_value(value_list, [ATTR_OPEN, ATTR_UP])
+    mapping[ATTR_CLOSE] = get_value(value_list, [ATTR_CLOSE, ATTR_DOWN])
+
+    # if lumi device get status
+    if ATTR_LUMI in model:
+        status_prop = get_property(curtain_properties, ATTR_STATUS)
+        mapping[ATTR_STATUS]['siid'] = siid
+        mapping[ATTR_STATUS]['piid'] = status_prop['iid']
+        status_value_list = status_prop['value-list']
+        mapping[ATTR_STOPPED] = get_value(status_value_list, [ATTR_STOPPED])
+        mapping[ATTR_OPEN] = get_value(status_value_list, [ATTR_OPEN])
+        mapping[ATTR_CLOSE] = get_value(status_value_list, [ATTR_CLOSE])
 
     current_position_prop = [prop for prop in curtain_properties if ATTR_CURRENT_POSITION in prop['type']][0]
     mapping[ATTR_CURRENT_POSITION]['siid'] = siid
@@ -188,6 +223,7 @@ class MijiaCurtain(CoverEntity):
         self._current_position = 0
         self._target_position = 0
         self._action = 0
+        self._polarity = None
         if model:
             self._model = model
             self._mapping = MIOT_MAPPING[model]
@@ -239,7 +275,8 @@ class MijiaCurtain(CoverEntity):
         data = {
             ATTR_CURRENT_POSITION: self._current_position,
             ATTR_TARGET_POSITION: self._target_position,
-            CONF_MODEL: self._model
+            CONF_MODEL: self._model,
+            ATTR_POLARITY: self._polarity,
         }
         return data
 
@@ -247,6 +284,8 @@ class MijiaCurtain(CoverEntity):
         self.update_current_position()
         self.update_target_position()
         self.update_action()
+        if ATTR_LUMI in self._model:
+            self._polarity = self.get_property(ATTR_POLARITY)
         _LOGGER.debug('update_state {} data: {}'.format(self._name, self.state_attributes))
 
     def update_current_position(self):
@@ -264,17 +303,26 @@ class MijiaCurtain(CoverEntity):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
 
     def update_action(self):
-        self._action = self.get_property(ATTR_MOTOR_CONTROL)
+        if ATTR_LUMI in self._model:
+            self._action = self.get_property(ATTR_STATUS)
+        else:
+            self._action = self.get_property(ATTR_MOTOR_CONTROL)
 
     @property
     def is_opening(self):
         self.update_action()
-        return self._action == self._mapping[ATTR_OPEN]
+        if ATTR_LUMI in self._model:
+            return self._action == self._mapping[ATTR_OPENING]
+        else:
+            return self._action == self._mapping[ATTR_OPEN]
 
     @property
     def is_closing(self):
         self.update_action()
-        return self._action == self._mapping[ATTR_CLOSE]
+        if ATTR_LUMI in self._model:
+            return self._action == self._mapping[ATTR_CLOSING]
+        else:
+            return self._action == self._mapping[ATTR_CLOSE]
 
     @property
     def is_closed(self):
