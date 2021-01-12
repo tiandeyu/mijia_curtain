@@ -292,12 +292,11 @@ class MijiaCurtain(CoverEntity):
         position = self.get_property(ATTR_CURRENT_POSITION)
         if position is None:
             return
-        if position:
-            if 95 < position < 100:
-                position = 100
-            if 0 < position < 5:
-                position = 0
-            self._current_position = position
+        if 95 < position < 100:
+            position = 100
+        if 0 < position < 5:
+            position = 0
+        self._current_position = position
 
     def update_target_position(self):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
