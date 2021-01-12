@@ -260,10 +260,7 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def device_class(self) -> Optional[str]:
-        if ATTR_CURTAIN in self._model:
-            return DEVICE_CLASS_GATE
-        if ATTR_AIRER in self._model:
-            return DEVICE_CLASS_CURTAIN
+        return DEVICE_CLASS_CURTAIN
 
     @property
     def state(self):
