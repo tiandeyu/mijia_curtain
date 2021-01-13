@@ -276,8 +276,8 @@ class MijiaCurtain(CoverEntity):
     @property
     def state_attributes(self):
         data = {
-            ATTR_CURRENT_POSITION: self._current_position,
-            ATTR_TARGET_POSITION: self._target_position,
+            'current_position': self._current_position,
+            'target_position': self._target_position,
             CONF_MODEL: self._model,
         }
         return data
@@ -292,10 +292,6 @@ class MijiaCurtain(CoverEntity):
         position = self.get_property(ATTR_CURRENT_POSITION)
         if position is None:
             return
-        if 95 < position < 100:
-            position = 100
-        if 0 < position < 5:
-            position = 0
         self._current_position = position
 
     def update_target_position(self):
@@ -309,7 +305,6 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_opening(self):
-        # self.update_action()
         if ATTR_LUMI in self._model:
             return self._action == self._mapping[ATTR_OPENING]
         else:
@@ -317,7 +312,6 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_closing(self):
-        # self.update_action()
         if ATTR_LUMI in self._model:
             return self._action == self._mapping[ATTR_CLOSING]
         else:
@@ -325,17 +319,14 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_closed(self):
-        # self.update_current_position()
-        return self._current_position == 0
+        return 0 <= self._current_position <= 5
 
     @property
     def is_opened(self):
-        # self.update_current_position()
-        return self._current_position == 100
+        return 95 <= self._current_position <= 100
 
     @property
     def current_cover_position(self):
-        # self.update_current_position()
         return self._current_position
 
     def open_cover(self, **kwargs) -> None:
