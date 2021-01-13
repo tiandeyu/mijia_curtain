@@ -292,6 +292,10 @@ class MijiaCurtain(CoverEntity):
         position = self.get_property(ATTR_CURRENT_POSITION)
         if position is None:
             return
+        if 0 < position < 5:
+            position = 0
+        if 95 < position < 100:
+            position = 100
         self._current_position = position
 
     def update_target_position(self):
@@ -319,11 +323,11 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def is_closed(self):
-        return 0 <= self._current_position <= 5
+        return self._current_position == 0
 
     @property
     def is_opened(self):
-        return 95 <= self._current_position <= 100
+        return self._current_position == 100
 
     @property
     def current_cover_position(self):
