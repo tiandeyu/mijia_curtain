@@ -63,6 +63,7 @@ CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
+LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
@@ -96,6 +97,14 @@ MIOT_MAPPING = {
         ATTR_PAUSE: 0,
         ATTR_OPEN: 1,
         ATTR_CLOSE: 2,
+    },
+    LESHI_CURTAIN_V0001: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 5},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 6},
+        ATTR_PAUSE: 1,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 0,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:lumi-hagl05:1
     LUMI_CURTAIN_HAGL05: {
