@@ -252,7 +252,7 @@ class MijiaCurtain(CoverEntity):
                 ATTR_CLOSE: 0,
             }
         # init device
-        self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
+        self.miotDevice = MiotDevice(ip=host, token=token)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
         # if model not config get model from miot device info
         if not model:
@@ -343,10 +343,10 @@ class MijiaCurtain(CoverEntity):
         return self._current_position
 
     def open_cover(self, **kwargs) -> None:
-        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
 
     def close_cover(self, **kwargs):
-        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
 
     def toggle(self, **kwargs) -> None:
         if self.is_closed:
@@ -355,19 +355,25 @@ class MijiaCurtain(CoverEntity):
             self.close_cover(**kwargs)
 
     def stop_cover(self, **kwargs):
-        self.miotDevice.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
 
     def set_cover_position(self, **kwargs):
-        self.miotDevice.set_property(ATTR_TARGET_POSITION, kwargs['position'])
+        self.set_property(ATTR_TARGET_POSITION, kwargs['position'])
+
+    def set_property(self, property_key, value):
+        siid = self._mapping[property_key]['siid']
+        piid = self._mapping[property_key]['piid']
+        self.miotDevice.set_property_by(siid, piid, value)
 
     def get_property(self, property_key):
-        properties = [{"did": property_key, **self._mapping[property_key]}]
         value = None
         try:
-            results = self.miotDevice.get_properties(properties, property_getter="get_properties", max_properties=15)
-            for prop in results:
-                if prop["code"] == 0 and prop["did"] == property_key:
-                    value = prop["value"]
+            siid = self._mapping[property_key]['siid']
+            piid = self._mapping[property_key]['piid']
+            results = self.miotDevice.get_property_by(siid, piid)
+            for result in results:
+                if result["code"] == 0 and result["siid"] == siid and  result['piid'] == piid:
+                    value = result["value"]
         except Exception:
             _LOGGER.error("Get property {} exception".format(property_key), exc_info=True)
         _LOGGER.debug("{}, {} is: {}".format(self._name, property_key, value))
