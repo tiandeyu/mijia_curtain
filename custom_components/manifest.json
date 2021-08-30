@@ -1,6 +1,7 @@
 {
   "domain": "mijia_curtain",
   "name": "Mijia Curtain",
+  "version": "2021.6.7",
   "documentation": "https://www.natic.cn",
   "dependencies": [],
   "codeowners": ["@natic"],
