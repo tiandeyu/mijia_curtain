@@ -306,6 +306,7 @@ class MijiaCurtain(CoverEntity):
         if 95 < position < 100:
             position = 100
         self._current_position = position
+        self.async_write_ha_state()
 
     def update_target_position(self):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
