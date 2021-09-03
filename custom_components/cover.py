@@ -252,7 +252,7 @@ class MijiaCurtain(CoverEntity):
                 ATTR_CLOSE: 0,
             }
         # init device
-        self.miotDevice = MiotDevice(ip=host, token=token)
+        self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
         # if model not config get model from miot device info
         if not model:
