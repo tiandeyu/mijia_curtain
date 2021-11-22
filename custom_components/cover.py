@@ -18,6 +18,7 @@ from homeassistant.const import (
     STATE_OPENING,
 )
 from homeassistant.exceptions import PlatformNotReady
+from homeassistant.helpers.device_registry import format_mac
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 import logging
@@ -155,7 +156,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         device_info = await hass.async_add_executor_job(miio_device.info)
         if model is None:
             model = device_info.model
-        unique_id = f"{model}-{device_info.mac_address}"
+        unique_id = f"{model.replace('.', '_') if model else 'unknown_model'}_{format_mac(device_info.mac_address).replace(':', '')}"
         _LOGGER.info(
             "%s %s %s detected",
             model,
@@ -257,7 +258,7 @@ def get_miot_device_mapping(model):
 
 class MijiaCurtain(CoverEntity):
     def __init__(self, unique_id, name, host, token, model):
-        self.entity_id = f"cover.mijia_curtain_{model.replace('.', '_') if model else 'unknown'}_{name}"
+        self.entity_id = f"cover.mijia_curtain_{unique_id}"
         self._unique_id = unique_id
         self._name = name
         self._model = model
