@@ -196,7 +196,20 @@ def get_value(value_list, name_list):
     return [value for value in value_list if value['description'] in name_list][0]['value']
 
 
-def get_mapping(model, mapping):
+def get_miot_device_mapping(model):
+    # preset models
+    if model in MIOT_MAPPING:
+        return MIOT_MAPPING[model]
+
+    # other models, fetch from miot specs
+    mapping = {
+        ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
+        ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
+        ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 0,
+        ATTR_CLOSE: 0,
+    }
     # populate curtain mapping from miot spec rest service
     instance_url = "https://miot-spec.org/miot-spec-v2/instances?status=all"
     instances = send_http_req(instance_url)['instances']
@@ -248,24 +261,13 @@ class MijiaCurtain(CoverEntity):
         self._unique_id = unique_id
         self._name = name
         self._model = model
-        self._mapping = MIOT_MAPPING[model] if model in MIOT_MAPPING else {
-            ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
-            ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
-            ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
-            ATTR_PAUSE: 0,
-            ATTR_OPEN: 0,
-            ATTR_CLOSE: 0,
-        }
+        self._mapping = get_miot_device_mapping(model)
         self._current_position = 0
         self._target_position = 0
         self._action = 0
         # init device
         self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
-        # if model not config get model from miot device info
-        if not model:
-            self._model = self.miotDevice.info().model
-            self._mapping = get_mapping(self._model, self._mapping)
 
     @property
     def supported_features(self):
