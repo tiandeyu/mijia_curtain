@@ -30,12 +30,18 @@ from homeassistant.const import (
     STATE_OPEN,
     STATE_OPENING,
 )
+from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 import logging
 import requests
 import json
+import hashlib
 from typing import Optional
+from miio import (
+    Device,
+    DeviceException,
+)
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -151,13 +157,30 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 
-def setup_platform(hass, config, add_devices_callback, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+    unique_id = None
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
     token = config.get(CONF_TOKEN)
     model = config.get(CONF_MODEL)
-    cover = MijiaCurtain(name, host, token, model)
-    add_devices_callback([cover])
+
+    try:
+        miio_device = Device(host, token)
+        device_info = await hass.async_add_executor_job(miio_device.info)
+        if model is None:
+            model = device_info.model
+        unique_id = f"{model}-{device_info.mac_address}"
+        _LOGGER.info(
+            "%s %s %s detected",
+            model,
+            device_info.firmware_version,
+            device_info.hardware_version,
+        )
+    except DeviceException as ex:
+        raise PlatformNotReady from ex
+
+    device = MijiaCurtain(unique_id, name, host, token, model)
+    async_add_entities([device])
 
 
 def send_http_req(url):
@@ -234,23 +257,22 @@ def get_mapping(model, mapping):
 
 
 class MijiaCurtain(CoverEntity):
-    def __init__(self, name, host, token, model):
+    def __init__(self, unique_id, name, host, token, model):
+        self.entity_id = f"cover.mijia_curtain_{name}"
+        self._unique_id = unique_id
         self._name = name
+        self._model = model
+        self._mapping = MIOT_MAPPING[model] if model in MIOT_MAPPING else {
+            ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
+            ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
+            ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
+            ATTR_PAUSE: 0,
+            ATTR_OPEN: 0,
+            ATTR_CLOSE: 0,
+        }
         self._current_position = 0
         self._target_position = 0
         self._action = 0
-        if model:
-            self._model = model
-            self._mapping = MIOT_MAPPING[model]
-        else:
-            self._mapping = {
-                ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
-                ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
-                ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
-                ATTR_PAUSE: 0,
-                ATTR_OPEN: 0,
-                ATTR_CLOSE: 0,
-            }
         # init device
         self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
@@ -262,6 +284,10 @@ class MijiaCurtain(CoverEntity):
     @property
     def supported_features(self):
         return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+
+    @property
+    def unique_id(self):
+        return self._unique_id
 
     @property
     def name(self):
