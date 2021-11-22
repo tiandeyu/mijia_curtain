@@ -244,7 +244,7 @@ def get_mapping(model, mapping):
 
 class MijiaCurtain(CoverEntity):
     def __init__(self, unique_id, name, host, token, model):
-        self.entity_id = f"cover.mijia_curtain_{name}"
+        self.entity_id = f"cover.mijia_curtain_{model.replace('.', '_') if model else 'unknown'}_{name}"
         self._unique_id = unique_id
         self._name = name
         self._model = model
