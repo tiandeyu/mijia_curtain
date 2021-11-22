@@ -1,7 +1,5 @@
 """Support for Mijia Curtain."""
 from homeassistant.components.cover import (
-    DOMAIN,
-    ENTITY_ID_FORMAT,
     PLATFORM_SCHEMA,
     SUPPORT_CLOSE,
     SUPPORT_OPEN,
@@ -9,22 +7,11 @@ from homeassistant.components.cover import (
     SUPPORT_SET_POSITION,
     CoverEntity,
     DEVICE_CLASS_CURTAIN,
-    DEVICE_CLASS_GATE,
 )
 from homeassistant.const import (
     CONF_NAME,
     CONF_HOST,
     CONF_TOKEN,
-    SERVICE_CLOSE_COVER,
-    SERVICE_CLOSE_COVER_TILT,
-    SERVICE_OPEN_COVER,
-    SERVICE_OPEN_COVER_TILT,
-    SERVICE_SET_COVER_POSITION,
-    SERVICE_SET_COVER_TILT_POSITION,
-    SERVICE_STOP_COVER,
-    SERVICE_STOP_COVER_TILT,
-    SERVICE_TOGGLE,
-    SERVICE_TOGGLE_COVER_TILT,
     STATE_CLOSED,
     STATE_CLOSING,
     STATE_OPEN,
@@ -36,7 +23,6 @@ import voluptuous as vol
 import logging
 import requests
 import json
-import hashlib
 from typing import Optional
 from miio import (
     Device,
@@ -258,7 +244,7 @@ def get_mapping(model, mapping):
 
 class MijiaCurtain(CoverEntity):
     def __init__(self, unique_id, name, host, token, model):
-        self.entity_id = f"cover.mijia_curtain_{name}"
+        self.entity_id = f"cover.mijia_curtain_{model.replace('.', '_') if model else 'unknown'}_{name}"
         self._unique_id = unique_id
         self._name = name
         self._model = model
