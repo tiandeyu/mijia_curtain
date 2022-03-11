@@ -67,6 +67,7 @@ LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
+_090615_CURTAIN_PTX82 = "090615.curtain.ptx82"
 
 
 MIOT_MAPPING = {
@@ -140,6 +141,14 @@ MIOT_MAPPING = {
         ATTR_PAUSE: 2,
         ATTR_OPEN: 0,
         ATTR_CLOSE: 1,
+    },
+    _090615_CURTAIN_PTX82: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 1,
+        ATTR_CLOSE: 2,
     },
 }
 
