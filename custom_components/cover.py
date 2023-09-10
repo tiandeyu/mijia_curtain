@@ -1,33 +1,43 @@
 """Support for Mijia Curtain."""
 from homeassistant.components.cover import (
+    DOMAIN,
+    ENTITY_ID_FORMAT,
     PLATFORM_SCHEMA,
     SUPPORT_CLOSE,
+    SUPPORT_CLOSE_TILT,
     SUPPORT_OPEN,
+    SUPPORT_OPEN_TILT,
     SUPPORT_STOP,
     SUPPORT_SET_POSITION,
     CoverEntity,
     DEVICE_CLASS_CURTAIN,
+    DEVICE_CLASS_GATE,
 )
 from homeassistant.const import (
     CONF_NAME,
     CONF_HOST,
     CONF_TOKEN,
+    SERVICE_CLOSE_COVER,
+    SERVICE_CLOSE_COVER_TILT,
+    SERVICE_OPEN_COVER,
+    SERVICE_OPEN_COVER_TILT,
+    SERVICE_SET_COVER_POSITION,
+    SERVICE_SET_COVER_TILT_POSITION,
+    SERVICE_STOP_COVER,
+    SERVICE_STOP_COVER_TILT,
+    SERVICE_TOGGLE,
+    SERVICE_TOGGLE_COVER_TILT,
     STATE_CLOSED,
     STATE_CLOSING,
     STATE_OPEN,
     STATE_OPENING,
 )
-from homeassistant.exceptions import PlatformNotReady
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 import logging
 import requests
 import json
 from typing import Optional
-from miio import (
-    Device,
-    DeviceException,
-)
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -46,6 +56,8 @@ ATTR_OPEN = 'Open'
 ATTR_UP = 'Up'
 ATTR_CLOSE = 'Close'
 ATTR_DOWN = 'Down'
+ATTR_STEPPING_UP = 'Stepping Up'
+ATTR_STEPPING_DOWN = 'Stepping Down'
 
 ATTR_STOPPED = 'Stopped'
 ATTR_OPENING = 'Opening'
@@ -54,12 +66,12 @@ ATTR_CLOSING = 'Closing'
 CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
+DOOYA_CURTAIN_C1 = "dooya.curtain.c1"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
-_090615_CURTAIN_PTX82 = "090615.curtain.ptx82"
 
 
 MIOT_MAPPING = {
@@ -81,6 +93,17 @@ MIOT_MAPPING = {
         ATTR_PAUSE: 1,
         ATTR_OPEN: 2,
         ATTR_CLOSE: 0,
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:dooya-c1:1
+    DOOYA_CURTAIN_C1: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 1,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 0,
+        ATTR_STEPPING_UP: 3,
+        ATTR_STEPPING_DOWN: 4,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     BABAI_CURTAIN_BB82MJ: {
@@ -134,14 +157,6 @@ MIOT_MAPPING = {
         ATTR_OPEN: 0,
         ATTR_CLOSE: 1,
     },
-    _090615_CURTAIN_PTX82: {
-        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
-        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
-        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
-        ATTR_PAUSE: 0,
-        ATTR_OPEN: 1,
-        ATTR_CLOSE: 2,
-    },
 }
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
@@ -152,30 +167,13 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
 })
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    unique_id = None
+def setup_platform(hass, config, add_devices_callback, discovery_info=None):
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
     token = config.get(CONF_TOKEN)
     model = config.get(CONF_MODEL)
-
-    try:
-        miio_device = Device(host, token)
-        device_info = await hass.async_add_executor_job(miio_device.info)
-        if model is None:
-            model = device_info.model
-        unique_id = f"{model}-{device_info.mac_address}"
-        _LOGGER.info(
-            "%s %s %s detected",
-            model,
-            device_info.firmware_version,
-            device_info.hardware_version,
-        )
-    except DeviceException as ex:
-        raise PlatformNotReady from ex
-
-    device = MijiaCurtain(unique_id, name, host, token, model)
-    async_add_entities([device])
+    cover = MijiaCurtain(name, host, token, model)
+    add_devices_callback([cover])
 
 
 def send_http_req(url):
@@ -252,22 +250,24 @@ def get_mapping(model, mapping):
 
 
 class MijiaCurtain(CoverEntity):
-    def __init__(self, unique_id, name, host, token, model):
-        self.entity_id = f"cover.mijia_curtain_{model.replace('.', '_') if model else 'unknown'}_{name}"
-        self._unique_id = unique_id
+    def __init__(self, name, host, token, model):
         self._name = name
-        self._model = model
-        self._mapping = MIOT_MAPPING[model] if model in MIOT_MAPPING else {
-            ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
-            ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
-            ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
-            ATTR_PAUSE: 0,
-            ATTR_OPEN: 0,
-            ATTR_CLOSE: 0,
-        }
         self._current_position = 0
+        self._current_tilt_position = 0
         self._target_position = 0
         self._action = 0
+        if model:
+            self._model = model
+            self._mapping = MIOT_MAPPING[model]
+        else:
+            self._mapping = {
+                ATTR_MOTOR_CONTROL: {"siid": 0, "piid": 0},
+                ATTR_CURRENT_POSITION: {"siid": 0, "piid": 0},
+                ATTR_TARGET_POSITION: {"siid": 0, "piid": 0},
+                ATTR_PAUSE: 0,
+                ATTR_OPEN: 0,
+                ATTR_CLOSE: 0,
+            }
         # init device
         self.miotDevice = MiotDevice(ip=host, token=token, mapping=self._mapping)
         _LOGGER.info("Init miot device: {}, {}".format(self._name, self.miotDevice))
@@ -278,11 +278,11 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def supported_features(self):
-        return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-
-    @property
-    def unique_id(self):
-        return self._unique_id
+        if self._model == DOOYA_CURTAIN_C1:
+            return SUPPORT_OPEN | SUPPORT_OPEN_TILT | SUPPORT_CLOSE | SUPPORT_CLOSE_TILT | SUPPORT_STOP | SUPPORT_SET_POSITION
+        else:
+            return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        
 
     @property
     def name(self):
@@ -329,6 +329,7 @@ class MijiaCurtain(CoverEntity):
         self._current_position = position
         self.async_write_ha_state()
 
+
     def update_target_position(self):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
 
@@ -363,12 +364,22 @@ class MijiaCurtain(CoverEntity):
     @property
     def current_cover_position(self):
         return self._current_position
+    
+    @property
+    def current_cover_tilt_position(self):
+        return self._current_tilt_position
 
-    def open_cover(self, **kwargs) -> None:
-        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
+    async def async_open_cover(self, **kwargs) -> None:
+        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
 
-    def close_cover(self, **kwargs):
-        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
+    async def async_open_cover_tilt(self, **kwargs) -> None:
+        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_UP])
+
+    async def async_close_cover(self, **kwargs):
+        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
+
+    async def async_close_cover_tilt(self, **kwargs):
+        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_DOWN])
 
     def toggle(self, **kwargs) -> None:
         if self.is_closed:
@@ -376,13 +387,13 @@ class MijiaCurtain(CoverEntity):
         else:
             self.close_cover(**kwargs)
 
-    def stop_cover(self, **kwargs):
-        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
+    async def async_stop_cover(self, **kwargs):
+        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
 
-    def set_cover_position(self, **kwargs):
-        self.set_property(ATTR_TARGET_POSITION, kwargs['position'])
+    async def async_set_cover_position(self, **kwargs):
+        await self.set_property(ATTR_TARGET_POSITION, kwargs['position'])
 
-    def set_property(self, property_key, value):
+    async def set_property(self, property_key, value):
         siid = self._mapping[property_key]['siid']
         piid = self._mapping[property_key]['piid']
         self.miotDevice.set_property_by(siid, piid, value)
