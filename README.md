@@ -47,11 +47,13 @@ https://github.com/tiandeyu/Xiaomi-cloud-tokens-extractor
 
 > 如果ha环境没有外网可以手工填写model配置，仅支持以下几个型号   
 > 未验证型号直接填写token，会自动从网络拉取model配置
+> C1为卷帘控制器，支持香格里拉帘角度控制
 
 | 名称 | 型号 | 
 | :---- | :--- | 
 | 杜亚M1 | dooya.curtain.m1 | 
 | 杜亚M2 | dooya.curtain.m2 | 
+| 杜亚C1 | dooya.curtain.c1 | 
 | 情景开合电机WIFI X版（闲鱼米家电机） | babai.curtain.bb82mj | 
 | 绿米窗帘电机WIFI版 | lumi.curtain.hagl05 |
 | 绿米窗帘电机WIFI版 | lumi.curtain.hmcn01 |
