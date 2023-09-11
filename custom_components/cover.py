@@ -335,7 +335,7 @@ class MijiaCurtain(CoverEntity):
             if 95 < position < 100:
                 position = 100
         self._current_position = position
-        self._tilt_position = (100 - self._current_position) * 20
+        self._tilt_position = self.current_cover_tilt_position()
         self.async_write_ha_state()
 
 
