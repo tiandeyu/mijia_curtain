@@ -256,7 +256,6 @@ class MijiaCurtain(CoverEntity):
         self._name = name
         self._current_position = 0
         self._target_position = 0
-        self._tilt_position = 0
         self._action = 0
         if model:
             self._model = model
@@ -312,11 +311,12 @@ class MijiaCurtain(CoverEntity):
     @property
     def state_attributes(self):
         data = {
-            'current_position': self._current_position,
-            'target_position': self._target_position,
-            'tilt_position': self._tilt_position,
             CONF_MODEL: self._model,
+            'position': self._current_position,
+            'target_position': self._target_position,
         }
+        if self._model == DOOYA_CURTAIN_C1:
+            data['tilt_position'] = self.current_cover_tilt_position
         return data
 
     def update(self):
@@ -327,7 +327,7 @@ class MijiaCurtain(CoverEntity):
 
     def update_current_position(self):
         position = self.get_property(ATTR_CURRENT_POSITION)
-        if self._model == BABAI_CURTAIN_BB82MJ:
+        if self._model != DOOYA_CURTAIN_C1:
             if position is None:
                 return
             if 0 < position < 5:
@@ -335,7 +335,6 @@ class MijiaCurtain(CoverEntity):
             if 95 < position < 100:
                 position = 100
         self._current_position = position
-        self._tilt_position = self.current_cover_tilt_position()
         self.async_write_ha_state()
 
 
