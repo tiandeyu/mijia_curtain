@@ -9,9 +9,10 @@ from homeassistant.components.cover import (
     SUPPORT_OPEN_TILT,
     SUPPORT_STOP,
     SUPPORT_SET_POSITION,
+    SUPPORT_SET_TILT_POSITION,
     CoverEntity,
     DEVICE_CLASS_CURTAIN,
-    DEVICE_CLASS_GATE,
+    DEVICE_CLASS_BLIND,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -37,7 +38,8 @@ import voluptuous as vol
 import logging
 import requests
 import json
-from typing import Optional
+import functools as ft
+from typing import Optional, Any
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -253,7 +255,6 @@ class MijiaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
         self._name = name
         self._current_position = 0
-        self._current_tilt_position = 0
         self._target_position = 0
         self._action = 0
         if model:
@@ -278,11 +279,12 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def supported_features(self):
+        curtain_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        blind_features = curtain_features | SUPPORT_OPEN_TILT | SUPPORT_CLOSE_TILT | SUPPORT_SET_TILT_POSITION
         if self._model == DOOYA_CURTAIN_C1:
-            return SUPPORT_OPEN | SUPPORT_OPEN_TILT | SUPPORT_CLOSE | SUPPORT_CLOSE_TILT | SUPPORT_STOP | SUPPORT_SET_POSITION
+            return blind_features
         else:
-            return SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-        
+            return curtain_features
 
     @property
     def name(self):
@@ -290,7 +292,10 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def device_class(self) -> Optional[str]:
-        return DEVICE_CLASS_CURTAIN
+        if self._model == DOOYA_CURTAIN_C1:
+            return DEVICE_CLASS_BLIND
+        else:
+            return DEVICE_CLASS_CURTAIN
 
     @property
     def state(self):
@@ -308,6 +313,7 @@ class MijiaCurtain(CoverEntity):
         data = {
             'current_position': self._current_position,
             'target_position': self._target_position,
+            'tilt_position': self.current_cover_tilt_position(),
             CONF_MODEL: self._model,
         }
         return data
@@ -320,12 +326,13 @@ class MijiaCurtain(CoverEntity):
 
     def update_current_position(self):
         position = self.get_property(ATTR_CURRENT_POSITION)
-        if position is None:
-            return
-        if 0 < position < 5:
-            position = 0
-        if 95 < position < 100:
-            position = 100
+        if self._model != DOOYA_CURTAIN_C1:
+            if position is None:
+                return
+            if 0 < position < 5:
+                position = 0
+            if 95 < position < 100:
+                position = 100
         self._current_position = position
         self.async_write_ha_state()
 
@@ -367,19 +374,24 @@ class MijiaCurtain(CoverEntity):
     
     @property
     def current_cover_tilt_position(self):
-        return self._current_tilt_position
+        if self._current_position > 5:
+            return 0
+        else:
+            return (100 - self._current_position) * 20
 
-    async def async_open_cover(self, **kwargs) -> None:
-        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
+    def open_cover(self, **kwargs) -> None:
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
 
-    async def async_open_cover_tilt(self, **kwargs) -> None:
-        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_UP])
+    async def async_open_cover(self, **kwargs: Any) -> None:
+        """Open the cover."""
+        await self.hass.async_add_executor_job(ft.partial(self.open_cover, **kwargs))
 
-    async def async_close_cover(self, **kwargs):
-        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
+    def close_cover(self, **kwargs):
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_CLOSE])
 
-    async def async_close_cover_tilt(self, **kwargs):
-        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_DOWN])
+    async def async_close_cover(self, **kwargs: Any) -> None:
+        """Close cover."""
+        await self.hass.async_add_executor_job(ft.partial(self.close_cover, **kwargs))
 
     def toggle(self, **kwargs) -> None:
         if self.is_closed:
@@ -387,13 +399,72 @@ class MijiaCurtain(CoverEntity):
         else:
             self.close_cover(**kwargs)
 
-    async def async_stop_cover(self, **kwargs):
-        await self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
+    async def async_toggle(self, **kwargs: Any) -> None:
+        """Toggle the entity."""
+        fns = {
+            "open": self.async_open_cover,
+            "close": self.async_close_cover,
+            "stop": self.async_stop_cover,
+        }
+        function = self._get_toggle_function(fns)
+        await function(**kwargs)
 
-    async def async_set_cover_position(self, **kwargs):
-        await self.set_property(ATTR_TARGET_POSITION, kwargs['position'])
+    def set_cover_position(self, **kwargs):
+        self.set_property(ATTR_TARGET_POSITION, kwargs['position'])
 
-    async def set_property(self, property_key, value):
+    async def async_set_cover_position(self, **kwargs: Any) -> None:
+        """Move the cover to a specific position."""
+        await self.hass.async_add_executor_job(
+            ft.partial(self.set_cover_position, **kwargs)
+        )
+
+    def stop_cover(self, **kwargs):
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
+
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the cover."""
+        await self.hass.async_add_executor_job(ft.partial(self.stop_cover, **kwargs))
+
+    def open_cover_tilt(self, **kwargs) -> None:
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_UP])
+
+    async def async_open_cover_tilt(self, **kwargs: Any) -> None:
+        """Open the cover tilt."""
+        await self.hass.async_add_executor_job(
+            ft.partial(self.open_cover_tilt, **kwargs)
+        )
+
+    def close_cover_tilt(self, **kwargs):
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_STEPPING_DOWN])
+
+    async def async_close_cover_tilt(self, **kwargs: Any) -> None:
+        """Close the cover tilt."""
+        await self.hass.async_add_executor_job(
+            ft.partial(self.close_cover_tilt, **kwargs)
+        )
+
+    def set_cover_tilt_position(self, **kwargs):
+        tilt = kwargs['tilt_position']
+        position = int((100 - tilt) / 20)
+        _LOGGER.debug('Convert tilt to position, tilt: {}, position: {}'.format(tilt, position))
+        self.set_property(ATTR_TARGET_POSITION, position)
+
+    async def async_set_cover_tilt_position(self, **kwargs: Any) -> None:
+        """Move the cover tilt to a specific position."""
+        await self.hass.async_add_executor_job(
+            ft.partial(self.set_cover_tilt_position, **kwargs)
+        )
+
+    def stop_cover_tilt(self, **kwargs):
+        self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_PAUSE])
+
+    async def async_stop_cover_tilt(self, **kwargs: Any) -> None:
+        """Stop the cover."""
+        await self.hass.async_add_executor_job(
+            ft.partial(self.stop_cover_tilt, **kwargs)
+        )
+
+    def set_property(self, property_key, value):
         siid = self._mapping[property_key]['siid']
         piid = self._mapping[property_key]['piid']
         self.miotDevice.set_property_by(siid, piid, value)
