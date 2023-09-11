@@ -378,7 +378,7 @@ class MijiaCurtain(CoverEntity):
         if self._current_position > 5:
             return 0
         else:
-            return (100 - self._current_position) * 20
+            return self._current_position * 20
 
     def open_cover(self, **kwargs) -> None:
         self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
