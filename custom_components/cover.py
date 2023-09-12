@@ -39,7 +39,7 @@ import logging
 import requests
 import json
 import functools as ft
-from typing import Optional, Any
+from typing import Optional, Any, final
 from miio.miot_device import MiotDevice
 
 _LOGGER = logging.getLogger(__name__)
@@ -278,17 +278,19 @@ class MijiaCurtain(CoverEntity):
             self._mapping = get_mapping(self._model, self._mapping)
 
     @property
-    def supported_features(self):
-        curtain_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-        blind_features = curtain_features | SUPPORT_OPEN_TILT | SUPPORT_CLOSE_TILT | SUPPORT_SET_TILT_POSITION
-        if self._model == DOOYA_CURTAIN_C1:
-            return blind_features
-        else:
-            return curtain_features
-
-    @property
     def name(self):
         return self._name
+
+    @property
+    def current_cover_position(self):
+        return self._current_position
+    
+    @property
+    def current_cover_tilt_position(self):
+        if self._current_position > 5:
+            return 0
+        else:
+            return self._current_position * 20
 
     @property
     def device_class(self) -> Optional[str]:
@@ -298,6 +300,7 @@ class MijiaCurtain(CoverEntity):
             return DEVICE_CLASS_CURTAIN
 
     @property
+    @final
     def state(self):
         if self.is_opening:
             return STATE_OPENING
@@ -308,16 +311,48 @@ class MijiaCurtain(CoverEntity):
             return None
         return STATE_CLOSED if closed else STATE_OPEN
 
+    @final
     @property
-    def state_attributes(self):
+    def state_attributes(self) -> dict[str, Any]:
         data = {
             CONF_MODEL: self._model,
-            'position': self._current_position,
+            'current_position': self._current_position,
             'target_position': self._target_position,
         }
         if self._model == DOOYA_CURTAIN_C1:
-            data['tilt_position'] = self.current_cover_tilt_position
+            data['current_tilt_position'] = self.current_cover_tilt_position
         return data
+
+    @property
+    def supported_features(self):
+        curtain_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
+        blind_features = curtain_features | SUPPORT_OPEN_TILT | SUPPORT_CLOSE_TILT | SUPPORT_SET_TILT_POSITION
+        if self._model == DOOYA_CURTAIN_C1:
+            return blind_features
+        else:
+            return curtain_features
+
+    @property
+    def is_opening(self):
+        if ATTR_LUMI in self._model:
+            return self._action == self._mapping[ATTR_OPENING]
+        else:
+            return self._action == self._mapping[ATTR_OPEN]
+
+    @property
+    def is_closing(self):
+        if ATTR_LUMI in self._model:
+            return self._action == self._mapping[ATTR_CLOSING]
+        else:
+            return self._action == self._mapping[ATTR_CLOSE]
+
+    @property
+    def is_closed(self):
+        return self._current_position == 0
+    
+    # @property
+    # def is_opened(self):
+    #     return self._current_position == 100
 
     def update(self):
         self.update_current_position()
@@ -337,7 +372,6 @@ class MijiaCurtain(CoverEntity):
         self._current_position = position
         self.async_write_ha_state()
 
-
     def update_target_position(self):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
 
@@ -346,39 +380,6 @@ class MijiaCurtain(CoverEntity):
             self._action = self.get_property(ATTR_STATUS)
         else:
             self._action = self.get_property(ATTR_MOTOR_CONTROL)
-
-    @property
-    def is_opening(self):
-        if ATTR_LUMI in self._model:
-            return self._action == self._mapping[ATTR_OPENING]
-        else:
-            return self._action == self._mapping[ATTR_OPEN]
-
-    @property
-    def is_closing(self):
-        if ATTR_LUMI in self._model:
-            return self._action == self._mapping[ATTR_CLOSING]
-        else:
-            return self._action == self._mapping[ATTR_CLOSE]
-
-    @property
-    def is_closed(self):
-        return self._current_position == 0
-
-    @property
-    def is_opened(self):
-        return self._current_position == 100
-
-    @property
-    def current_cover_position(self):
-        return self._current_position
-    
-    @property
-    def current_cover_tilt_position(self):
-        if self._current_position > 5:
-            return 0
-        else:
-            return self._current_position * 20
 
     def open_cover(self, **kwargs) -> None:
         self.set_property(ATTR_MOTOR_CONTROL, self._mapping[ATTR_OPEN])
