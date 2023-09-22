@@ -74,6 +74,7 @@ LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
+PTX_CURTAIN_SIDT82 = "090615.curtain.sidt82"
 
 
 MIOT_MAPPING = {
@@ -159,6 +160,15 @@ MIOT_MAPPING = {
         ATTR_OPEN: 0,
         ATTR_CLOSE: 1,
     },
+    https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:090615-sidt82:1
+    PTX_CURTAIN_SIDT82: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 2},
+        ATTR_PAUSE: 1,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 0,
+    }
 }
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
