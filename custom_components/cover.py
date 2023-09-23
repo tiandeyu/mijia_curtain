@@ -160,7 +160,7 @@ MIOT_MAPPING = {
         ATTR_OPEN: 0,
         ATTR_CLOSE: 1,
     },
-    https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:090615-sidt82:1
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:090615-sidt82:1
     PTX_CURTAIN_SIDT82: {
         ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 1},
         ATTR_CURRENT_POSITION: {"siid": 2, "piid": 2},
