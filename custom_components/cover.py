@@ -74,7 +74,7 @@ LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
 LUMI_CURTAIN_HMCN01 = "lumi.curtain.hmcn01"
 SYNIOT_CURTAIN_SYC1 = "syniot.curtain.syc1"
-PTX_CURTAIN_SIDT82 = "090615.curtain.sidt82"
+PTX_CURTAIN_SIDT82 = "ptx.curtain.sidt82"
 
 
 MIOT_MAPPING = {
@@ -360,9 +360,9 @@ class MijiaCurtain(CoverEntity):
     def is_closed(self):
         return self._current_position == 0
     
-    # @property
-    # def is_opened(self):
-    #     return self._current_position == 100
+    @property
+    def is_opened(self):
+        return self._current_position == 100
 
     def update(self):
         self.update_current_position()
