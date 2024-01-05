@@ -35,6 +35,7 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
+import uuid
 import logging
 import requests
 import json
@@ -263,6 +264,7 @@ def get_mapping(model, mapping):
 
 class MijiaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
+        self._unique_id = uuid.uuid1()
         self._name = name
         self._current_position = 0
         self._target_position = 0
@@ -287,6 +289,10 @@ class MijiaCurtain(CoverEntity):
             self._model = self.miotDevice.info().model
             self._mapping = get_mapping(self._model, self._mapping)
 
+    @property
+    def unique_id(self):
+        return self._unique_id
+    
     @property
     def name(self):
         return self._name
@@ -494,3 +500,4 @@ class MijiaCurtain(CoverEntity):
             _LOGGER.error("Get property {} exception".format(property_key), exc_info=True)
         _LOGGER.debug("{}, {} is: {}".format(self._name, property_key, value))
         return value
+
