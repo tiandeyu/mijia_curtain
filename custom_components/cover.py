@@ -35,7 +35,6 @@ from homeassistant.const import (
 )
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
-import uuid
 import logging
 import requests
 import json
@@ -264,7 +263,7 @@ def get_mapping(model, mapping):
 
 class MijiaCurtain(CoverEntity):
     def __init__(self, name, host, token, model):
-        self._unique_id = uuid.uuid1()
+        self._unique_id = name
         self._name = name
         self._current_position = 0
         self._target_position = 0
