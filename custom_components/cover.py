@@ -3,13 +3,7 @@ from homeassistant.components.cover import (
     DOMAIN,
     ENTITY_ID_FORMAT,
     PLATFORM_SCHEMA,
-    SUPPORT_CLOSE,
-    SUPPORT_CLOSE_TILT,
-    SUPPORT_OPEN,
-    SUPPORT_OPEN_TILT,
-    SUPPORT_STOP,
-    SUPPORT_SET_POSITION,
-    SUPPORT_SET_TILT_POSITION,
+    CoverEntityFeature,
     CoverEntity,
     DEVICE_CLASS_CURTAIN,
     DEVICE_CLASS_BLIND,
@@ -69,6 +63,7 @@ CONF_MODEL = 'model'
 DOOYA_CURTAIN_M1 = "dooya.curtain.m1"
 DOOYA_CURTAIN_M2 = "dooya.curtain.m2"
 DOOYA_CURTAIN_C1 = "dooya.curtain.c1"
+NOVO_CURTAIN_N21 = "novo.curtain.n21"
 BABAI_CURTAIN_BB82MJ = "babai.curtain.bb82mj"
 LESHI_CURTAIN_V0001 = "leshi.curtain.v0001"
 LUMI_CURTAIN_HAGL05 = "lumi.curtain.hagl05"
@@ -107,6 +102,15 @@ MIOT_MAPPING = {
         ATTR_CLOSE: 0,
         ATTR_STEPPING_UP: 3,
         ATTR_STEPPING_DOWN: 4,
+    },
+    # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:novo-n21:1
+    NOVO_CURTAIN_N21: {
+        ATTR_MOTOR_CONTROL: {"siid": 2, "piid": 2},
+        ATTR_CURRENT_POSITION: {"siid": 2, "piid": 6},
+        ATTR_TARGET_POSITION: {"siid": 2, "piid": 7},
+        ATTR_PAUSE: 0,
+        ATTR_OPEN: 2,
+        ATTR_CLOSE: 1,
     },
     # https://miot-spec.org/miot-spec-v2/instance?type=urn:miot-spec-v2:device:curtain:0000A00C:babai-bb82mj:1:0000C805
     BABAI_CURTAIN_BB82MJ: {
@@ -340,8 +344,8 @@ class MijiaCurtain(CoverEntity):
 
     @property
     def supported_features(self):
-        curtain_features = SUPPORT_OPEN | SUPPORT_CLOSE | SUPPORT_STOP | SUPPORT_SET_POSITION
-        blind_features = curtain_features | SUPPORT_OPEN_TILT | SUPPORT_CLOSE_TILT | SUPPORT_SET_TILT_POSITION
+        curtain_features = CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE | CoverEntityFeature.STOP | CoverEntityFeature.SET_POSITION
+        blind_features = curtain_features | CoverEntityFeature.OPEN_TILT | CoverEntityFeature.CLOSE_TILT | CoverEntityFeature.SET_TILT_POSITION
         if self._model == DOOYA_CURTAIN_C1:
             return blind_features
         else:
