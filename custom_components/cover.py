@@ -5,8 +5,7 @@ from homeassistant.components.cover import (
     PLATFORM_SCHEMA,
     CoverEntityFeature,
     CoverEntity,
-    DEVICE_CLASS_CURTAIN,
-    DEVICE_CLASS_BLIND,
+    CoverDeviceClass,
 )
 from homeassistant.const import (
     CONF_NAME,
@@ -314,9 +313,9 @@ class MijiaCurtain(CoverEntity):
     @property
     def device_class(self) -> Optional[str]:
         if self._model == DOOYA_CURTAIN_C1:
-            return DEVICE_CLASS_BLIND
+            return CoverDeviceClass.BLIND
         else:
-            return DEVICE_CLASS_CURTAIN
+            return CoverDeviceClass.CURTAIN
 
     @property
     @final
@@ -389,7 +388,6 @@ class MijiaCurtain(CoverEntity):
             if 95 < position < 100:
                 position = 100
         self._current_position = position
-        self.async_write_ha_state()
 
     def update_target_position(self):
         self._target_position = self.get_property(ATTR_TARGET_POSITION)
